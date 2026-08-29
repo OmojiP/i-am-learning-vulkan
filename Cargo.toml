@@ -7,3 +7,4 @@ edition = "2024"
 ash = "0.38.0"
 glam = "0.33.6"
 imgui = "0.12.0"
+sdl2 = { version = "0.38.0", features = ["bundled", "static-link"] }

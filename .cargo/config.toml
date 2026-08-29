@@ -1,0 +1,4 @@
+[env]
+# 同梱SDL2のCMakeLists.txtが cmake_minimum_required(VERSION 3.0.0) のため、
+# CMake 4.x でビルドするには互換ポリシーの下限を明示する必要がある
+CMAKE_POLICY_VERSION_MINIMUM = "3.5"
