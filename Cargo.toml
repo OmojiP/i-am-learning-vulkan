@@ -1,0 +1,9 @@
+[package]
+name = "i-am-learning-vulkan"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+ash = "0.38.0"
+glam = "0.33.6"
+imgui = "0.12.0"
