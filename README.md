@@ -184,3 +184,6 @@ initとcleanupはRustにしたことで消滅
 - `SDL_DestroyWindow` の呼び出し
   - `Window` → `VideoSubsystem` → `Sdl` と参照を保持していて、`Sdl` の Drop が参照カウントで `SDL_Quit` を呼ぶ。
     先に `SDL_Quit` されてウィンドウが宙に浮く、みたいなことは起きない
+
+## vkInstanceの作成
+

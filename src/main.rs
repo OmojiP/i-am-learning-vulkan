@@ -2,18 +2,27 @@
 use std::env;
 
 mod vk_engine;
-use vk_engine::VulkanEngine;
+use crate::vk_engine::VkEngineError;
+use vk_engine::VkEngine;
 
-fn main() -> Result<(), std::io::Error> {
+fn main() {
     let args: Vec<String> = env::args().collect();
     println!("Arguments: {:?}", args);
 
     // init
-    let mut engine: VulkanEngine = VulkanEngine::new();
+    let mut engine: VkEngine = match VkEngine::init() {
+        Ok(engine) => engine,
+        Err(error) => {
+            eprintln!("Failed to initialize VkEngine:");
+            eprintln!("{:?}", error);
+            return;
+        }
+    };
 
-    engine.run();
+    if let Err(error) = engine.run() {
+        eprintln!("VkEngine runtime error:");
+        eprintln!("{:?}", error)
+    }
 
     engine.cleanup();
-
-    Ok(())
 }
