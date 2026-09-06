@@ -23,6 +23,4 @@ fn main() {
         eprintln!("VkEngine runtime error:");
         eprintln!("{:?}", error)
     }
-
-    engine.cleanup();
 }
