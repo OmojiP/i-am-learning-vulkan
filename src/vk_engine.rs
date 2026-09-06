@@ -24,11 +24,14 @@ pub struct VkEngine {
     video_subsystem: sdl2::VideoSubsystem,
     pub window: sdl2::video::Window,
 
-    entry: ash::Entry,
-    instance: VkInstance,
-
+    // フィールドは宣言順に破棄されるので、Vulkanオブジェクトは
+    // 作成と逆順（debug_messenger -> instance -> entry）に並べる。
+    // entryを先に破棄するとvulkan-1.dllがアンロードされ、
+    // その後のdestroy_*呼び出しがアクセス違反になる。
     // Debug Messenger
     debug_messenger: Option<DebugMessenger>,
+    instance: VkInstance,
+    entry: ash::Entry,
 }
 
 impl VkEngine {
@@ -69,10 +72,9 @@ impl VkEngine {
             video_subsystem: video_subsystem,
             window: window,
 
-            entry: entry,
-            instance: instance,
-
             debug_messenger: debug_messenger,
+            instance: instance,
+            entry: entry,
         })
     }
 
