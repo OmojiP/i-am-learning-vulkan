@@ -2,6 +2,7 @@
 use std::env;
 
 mod vk_engine;
+mod vulkan;
 use crate::vk_engine::VkEngineError;
 use vk_engine::VkEngine;
 
