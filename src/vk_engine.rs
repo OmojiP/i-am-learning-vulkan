@@ -24,6 +24,8 @@ pub struct VkEngine {
     video_subsystem: sdl2::VideoSubsystem,
     pub window: sdl2::video::Window,
 
+    physical_device: Option<ash::vk::PhysicalDevice>,
+
     // フィールドは宣言順に破棄されるので、Vulkanオブジェクトは
     // 作成と逆順（debug_messenger -> instance -> entry）に並べる。
     // entryを先に破棄するとvulkan-1.dllがアンロードされ、
@@ -32,6 +34,16 @@ pub struct VkEngine {
     debug_messenger: Option<DebugMessenger>,
     instance: VkInstance,
     entry: ash::Entry,
+}
+
+pub struct QueueFamilyIndices {
+    pub graphics_family: Option<u32>,
+}
+
+impl QueueFamilyIndices {
+    pub fn is_complete(&self) -> bool {
+        self.graphics_family.is_some()
+    }
 }
 
 impl VkEngine {
@@ -54,6 +66,7 @@ impl VkEngine {
 
         let entry = unsafe { ash::Entry::load().map_err(VkEngineError::VulkanEntry)? };
 
+        // create Vulkan instance
         let instance = vulkan::instance::VkInstance::new(&window, &entry)?;
 
         // setupDebugMessenger
@@ -62,6 +75,9 @@ impl VkEngine {
         } else {
             None
         };
+
+        // pick Physical Device
+        let physical_device = Self::pick_physical_device(&instance.instance)?;
 
         Ok(VkEngine {
             frame_number: 0,
@@ -72,10 +88,67 @@ impl VkEngine {
             video_subsystem: video_subsystem,
             window: window,
 
+            physical_device: Some(physical_device),
             debug_messenger: debug_messenger,
             instance: instance,
             entry: entry,
         })
+    }
+
+    fn pick_physical_device(
+        instance: &ash::Instance,
+    ) -> Result<ash::vk::PhysicalDevice, VkEngineError> {
+        unsafe {
+            instance
+                .enumerate_physical_devices()
+                .map_err(VkEngineError::VulkanInstance)
+                .and_then(|devices| {
+                    for device in devices.iter() {
+                        if Self::is_device_suitable(instance, device) {
+                            return Ok(*device);
+                        }
+                    }
+                    Err(VkEngineError::VulkanInstance(
+                        ash::vk::Result::ERROR_INITIALIZATION_FAILED,
+                    ))
+                })
+        }
+    }
+
+    fn is_device_suitable(instance: &ash::Instance, device: &vk::PhysicalDevice) -> bool {
+        // デバイス選択の基準に使用できる要素
+        unsafe {
+            let device_properties = instance.get_physical_device_properties(*device);
+            let device_features = instance.get_physical_device_features(*device);
+        }
+
+        // GRAPHICSキューが使用可能かどうかを確認
+        let queue_family_indices = Self::find_queue_families(instance, device);
+        return queue_family_indices.is_complete();
+    }
+
+    // 必要なキューが使用可能かどうかを確認
+    fn find_queue_families(
+        instance: &ash::Instance,
+        device: &vk::PhysicalDevice,
+    ) -> QueueFamilyIndices {
+        unsafe {
+            for (index, queue_family) in instance
+                .get_physical_device_queue_family_properties(*device)
+                .iter()
+                .enumerate()
+            {
+                if queue_family.queue_flags.contains(vk::QueueFlags::GRAPHICS) {
+                    return QueueFamilyIndices {
+                        graphics_family: Some(index as u32),
+                    };
+                }
+            }
+        }
+
+        QueueFamilyIndices {
+            graphics_family: None,
+        }
     }
 
     pub fn draw(&self) {}
