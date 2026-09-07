@@ -24,6 +24,7 @@ pub struct VkEngine {
     video_subsystem: sdl2::VideoSubsystem,
     pub window: sdl2::video::Window,
 
+    logical_device: vulkan::logical_devices::LogicalDevice,
     physical_device: vulkan::physical_device::PhysicalDevice,
 
     // フィールドは宣言順に破棄されるので、Vulkanオブジェクトは
@@ -69,6 +70,12 @@ impl VkEngine {
         // pick Physical Device
         let physical_device = vulkan::physical_device::PhysicalDevice::new(&instance.instance)?;
 
+        // create Logical Device
+        let logical_device = vulkan::logical_devices::LogicalDevice::new(
+            &instance.instance,
+            &physical_device.handle,
+        )?;
+
         Ok(VkEngine {
             frame_number: 0,
             stop_rendering: false,
@@ -78,7 +85,9 @@ impl VkEngine {
             video_subsystem: video_subsystem,
             window: window,
 
+            logical_device: logical_device,
             physical_device: physical_device,
+
             debug_messenger: debug_messenger,
             instance: instance,
             entry: entry,

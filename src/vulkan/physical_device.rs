@@ -1,9 +1,9 @@
 use ash::vk;
 
-use crate::vk_engine::VkEngineError;
+use crate::{vk_engine::VkEngineError, vulkan::queue_families::QueueFamilyIndices};
 
 pub struct PhysicalDevice {
-    handle: Option<ash::vk::PhysicalDevice>,
+    pub handle: ash::vk::PhysicalDevice,
 }
 
 impl PhysicalDevice {
@@ -15,9 +15,7 @@ impl PhysicalDevice {
                 .and_then(|devices| {
                     for device in devices.iter() {
                         if Self::is_device_suitable(instance, device) {
-                            return Ok(Self {
-                                handle: Some(*device),
-                            });
+                            return Ok(Self { handle: *device });
                         }
                     }
                     Err(VkEngineError::VulkanInstance(
@@ -35,41 +33,7 @@ impl PhysicalDevice {
         }
 
         // GRAPHICSキューが使用可能かどうかを確認
-        let queue_family_indices = Self::find_queue_families(instance, device);
+        let queue_family_indices = QueueFamilyIndices::find_queue_families(instance, device);
         return queue_family_indices.is_complete();
-    }
-
-    // 必要なキューが使用可能かどうかを確認
-    fn find_queue_families(
-        instance: &ash::Instance,
-        device: &vk::PhysicalDevice,
-    ) -> QueueFamilyIndices {
-        unsafe {
-            for (index, queue_family) in instance
-                .get_physical_device_queue_family_properties(*device)
-                .iter()
-                .enumerate()
-            {
-                if queue_family.queue_flags.contains(vk::QueueFlags::GRAPHICS) {
-                    return QueueFamilyIndices {
-                        graphics_family: Some(index as u32),
-                    };
-                }
-            }
-        }
-
-        QueueFamilyIndices {
-            graphics_family: None,
-        }
-    }
-}
-
-pub struct QueueFamilyIndices {
-    pub graphics_family: Option<u32>,
-}
-
-impl QueueFamilyIndices {
-    pub fn is_complete(&self) -> bool {
-        self.graphics_family.is_some()
     }
 }
