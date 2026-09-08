@@ -2,12 +2,13 @@ use ash::vk::{self};
 use sdl2::event::{Event, WindowEvent};
 use std::time::Duration;
 
-use crate::vulkan::{self, debug::DebugMessenger, instance::VkInstance};
+use crate::vulkan::{self, debug::DebugMessenger, instance::VkInstance, surface};
 
 #[derive(Debug)]
 pub enum VkEngineError {
     SdlInit(String),
     SdlVideoInit(String),
+    SdlCreateWindow(String),
     WindowCreation(String),
     VulkanExtension(String),
     VulkanEntry(ash::LoadingError),
@@ -28,6 +29,8 @@ pub struct VkEngine {
 
     logical_device: vulkan::logical_devices::LogicalDevice,
     physical_device: vulkan::physical_device::PhysicalDevice,
+
+    surface: vulkan::surface::Surface,
 
     // フィールドは宣言順に破棄されるので、Vulkanオブジェクトは
     // 作成と逆順（debug_messenger -> instance -> entry）に並べる。
@@ -69,6 +72,8 @@ impl VkEngine {
             None
         };
 
+        let surface = vulkan::surface::Surface::new(&entry, &instance, &window)?;
+
         // pick Physical Device
         let physical_device = vulkan::physical_device::PhysicalDevice::new(&instance)?;
 
@@ -91,6 +96,8 @@ impl VkEngine {
             graphics_queue: graphics_queue,
             logical_device: logical_device,
             physical_device: physical_device,
+
+            surface: surface,
 
             debug_messenger: debug_messenger,
             instance: instance,
