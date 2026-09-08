@@ -1,19 +1,23 @@
 use ash::vk;
 
-use crate::vk_engine::VkEngineError;
+use crate::{
+    vk_engine::VkEngineError,
+    vulkan::{self},
+};
 
 pub struct LogicalDevice {
-    pub device: ash::Device,
+    pub handle: ash::Device,
+    pub queue_families: vulkan::queue_families::QueueFamilyIndices,
 }
 
 impl LogicalDevice {
     pub fn new(
-        instance: &ash::Instance,
-        physical_device: &ash::vk::PhysicalDevice,
+        instance: &vulkan::instance::VkInstance,
+        physical_device: &vulkan::physical_device::PhysicalDevice,
     ) -> Result<Self, VkEngineError> {
-        let indices = crate::vulkan::queue_families::QueueFamilyIndices::find_queue_families(
-            instance,
-            physical_device,
+        let indices = vulkan::queue_families::QueueFamilyIndices::find_queue_families(
+            &instance.handle,
+            &physical_device.handle,
         );
 
         if indices.graphics_family.is_none() {
@@ -36,11 +40,13 @@ impl LogicalDevice {
 
         unsafe {
             let logical_device = instance
-                .create_device(*physical_device, &device_create_info, None)
+                .handle
+                .create_device(physical_device.handle, &device_create_info, None)
                 .map_err(VkEngineError::VulkanInstance)?;
 
             Ok(Self {
-                device: logical_device,
+                handle: logical_device,
+                queue_families: indices,
             })
         }
     }
@@ -49,7 +55,7 @@ impl LogicalDevice {
 impl Drop for LogicalDevice {
     fn drop(&mut self) {
         unsafe {
-            self.device.destroy_device(None);
+            self.handle.destroy_device(None);
         }
     }
 }

@@ -24,6 +24,8 @@ pub struct VkEngine {
     video_subsystem: sdl2::VideoSubsystem,
     pub window: sdl2::video::Window,
 
+    graphics_queue: vulkan::queue::Queue,
+
     logical_device: vulkan::logical_devices::LogicalDevice,
     physical_device: vulkan::physical_device::PhysicalDevice,
 
@@ -62,19 +64,20 @@ impl VkEngine {
 
         // setupDebugMessenger
         let debug_messenger = if vulkan::instance::ENABLE_VALIDATION_LAYERS {
-            Some(DebugMessenger::new(&entry, &instance.instance)?)
+            Some(DebugMessenger::new(&entry, &instance)?)
         } else {
             None
         };
 
         // pick Physical Device
-        let physical_device = vulkan::physical_device::PhysicalDevice::new(&instance.instance)?;
+        let physical_device = vulkan::physical_device::PhysicalDevice::new(&instance)?;
 
         // create Logical Device
-        let logical_device = vulkan::logical_devices::LogicalDevice::new(
-            &instance.instance,
-            &physical_device.handle,
-        )?;
+        let logical_device =
+            vulkan::logical_devices::LogicalDevice::new(&instance, &physical_device)?;
+
+        let graphics_queue =
+            vulkan::queue::Queue::new(&logical_device, &logical_device.queue_families)?;
 
         Ok(VkEngine {
             frame_number: 0,
@@ -85,6 +88,7 @@ impl VkEngine {
             video_subsystem: video_subsystem,
             window: window,
 
+            graphics_queue: graphics_queue,
             logical_device: logical_device,
             physical_device: physical_device,
 

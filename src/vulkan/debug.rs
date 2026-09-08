@@ -1,6 +1,9 @@
 use ash::vk;
 
-use crate::vk_engine::VkEngineError;
+use crate::{
+    vk_engine::VkEngineError,
+    vulkan::{self},
+};
 
 pub struct DebugMessenger {
     utils: ash::ext::debug_utils::Instance,
@@ -8,8 +11,11 @@ pub struct DebugMessenger {
 }
 
 impl DebugMessenger {
-    pub fn new(entry: &ash::Entry, instance: &ash::Instance) -> Result<Self, VkEngineError> {
-        let utils = ash::ext::debug_utils::Instance::new(entry, instance);
+    pub fn new(
+        entry: &ash::Entry,
+        instance: &vulkan::instance::VkInstance,
+    ) -> Result<Self, VkEngineError> {
+        let utils = ash::ext::debug_utils::Instance::new(entry, &instance.handle);
 
         let create_info = Self::create_info();
 

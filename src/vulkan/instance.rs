@@ -1,13 +1,10 @@
-use crate::{
-    vk_engine::{VkEngine, VkEngineError},
-    vulkan::debug,
-};
+use crate::{vk_engine::VkEngineError, vulkan::debug};
 
 pub const ENABLE_VALIDATION_LAYERS: bool = cfg!(debug_assertions);
 pub const VALIDATION_LAYER_NAME: &std::ffi::CStr = c"VK_LAYER_KHRONOS_validation";
 
 pub struct VkInstance {
-    pub instance: ash::Instance,
+    pub handle: ash::Instance,
 }
 
 impl VkInstance {
@@ -49,7 +46,7 @@ impl VkInstance {
                 .map_err(VkEngineError::VulkanInstance)?
         };
 
-        Ok(Self { instance })
+        Ok(Self { handle: instance })
     }
 
     fn check_validation_layer_support(entry: &ash::Entry) -> Result<bool, VkEngineError> {
@@ -94,7 +91,7 @@ impl VkInstance {
 impl Drop for VkInstance {
     fn drop(&mut self) {
         unsafe {
-            self.instance.destroy_instance(None);
+            self.handle.destroy_instance(None);
         }
     }
 }

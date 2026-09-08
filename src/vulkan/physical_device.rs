@@ -1,20 +1,24 @@
 use ash::vk;
 
-use crate::{vk_engine::VkEngineError, vulkan::queue_families::QueueFamilyIndices};
+use crate::{
+    vk_engine::VkEngineError,
+    vulkan::{self},
+};
 
 pub struct PhysicalDevice {
     pub handle: ash::vk::PhysicalDevice,
 }
 
 impl PhysicalDevice {
-    pub fn new(instance: &ash::Instance) -> Result<Self, VkEngineError> {
+    pub fn new(instance: &vulkan::instance::VkInstance) -> Result<Self, VkEngineError> {
         unsafe {
             instance
+                .handle
                 .enumerate_physical_devices()
                 .map_err(VkEngineError::VulkanInstance)
                 .and_then(|devices| {
                     for device in devices.iter() {
-                        if Self::is_device_suitable(instance, device) {
+                        if Self::is_device_suitable(&instance.handle, device) {
                             return Ok(Self { handle: *device });
                         }
                     }
@@ -33,7 +37,8 @@ impl PhysicalDevice {
         }
 
         // GRAPHICSキューが使用可能かどうかを確認
-        let queue_family_indices = QueueFamilyIndices::find_queue_families(instance, device);
+        let queue_family_indices =
+            vulkan::queue_families::QueueFamilyIndices::find_queue_families(instance, device);
         return queue_family_indices.is_complete();
     }
 }
