@@ -6,7 +6,8 @@ use crate::{
 };
 
 pub struct Queue {
-    pub handle: vk::Queue,
+    pub grahpics_queue: vk::Queue,
+    pub present_queue: vk::Queue,
 }
 
 impl Queue {
@@ -21,10 +22,22 @@ impl Queue {
                     ash::vk::Result::ERROR_INITIALIZATION_FAILED,
                 ))?;
 
-        let queue_handle = unsafe { device.handle.get_device_queue(graphics_family_index, 0) };
+        let graphics_queue_handle =
+            unsafe { device.handle.get_device_queue(graphics_family_index, 0) };
+
+        let present_family_index =
+            queue_families
+                .present_family
+                .ok_or(VkEngineError::VulkanInstance(
+                    ash::vk::Result::ERROR_INITIALIZATION_FAILED,
+                ))?;
+
+        let present_queue_handle =
+            unsafe { device.handle.get_device_queue(present_family_index, 0) };
 
         Ok(Self {
-            handle: queue_handle,
+            grahpics_queue: graphics_queue_handle,
+            present_queue: present_queue_handle,
         })
     }
 }

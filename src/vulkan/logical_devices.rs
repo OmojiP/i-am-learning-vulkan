@@ -2,24 +2,19 @@ use ash::vk;
 
 use crate::{
     vk_engine::VkEngineError,
-    vulkan::{self},
+    vulkan::{self, queue},
 };
 
 pub struct LogicalDevice {
     pub handle: ash::Device,
-    pub queue_families: vulkan::queue_families::QueueFamilyIndices,
 }
 
 impl LogicalDevice {
     pub fn new(
         instance: &vulkan::instance::VkInstance,
+        indices: &vulkan::queue_families::QueueFamilyIndices,
         physical_device: &vulkan::physical_device::PhysicalDevice,
     ) -> Result<Self, VkEngineError> {
-        let indices = vulkan::queue_families::QueueFamilyIndices::find_queue_families(
-            &instance.handle,
-            &physical_device.handle,
-        );
-
         if indices.graphics_family.is_none() {
             return Err(VkEngineError::VulkanInstance(
                 ash::vk::Result::ERROR_INITIALIZATION_FAILED,
@@ -27,10 +22,18 @@ impl LogicalDevice {
         }
 
         let queue_priorities = [1.0];
-        let queue_create_info = vk::DeviceQueueCreateInfo::default()
-            .queue_family_index(indices.graphics_family.unwrap())
-            .queue_priorities(&queue_priorities);
-        let queue_create_infos = [queue_create_info];
+
+        let mut queue_create_infos = Vec::new();
+        let unique_queue_families = indices.get_unique_queue_families();
+
+        for &queue_family in unique_queue_families.iter() {
+            let mut queue_create_info = vk::DeviceQueueCreateInfo::default()
+                .queue_family_index(queue_family)
+                .queue_priorities(&queue_priorities);
+            queue_create_info.queue_count = 1;
+
+            queue_create_infos.push(queue_create_info);
+        }
 
         let device_features = vk::PhysicalDeviceFeatures::default();
 
@@ -46,7 +49,6 @@ impl LogicalDevice {
 
             Ok(Self {
                 handle: logical_device,
-                queue_families: indices,
             })
         }
     }

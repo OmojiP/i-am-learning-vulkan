@@ -25,9 +25,10 @@ pub struct VkEngine {
     video_subsystem: sdl2::VideoSubsystem,
     pub window: sdl2::video::Window,
 
-    graphics_queue: vulkan::queue::Queue,
+    queue: vulkan::queue::Queue,
 
     logical_device: vulkan::logical_devices::LogicalDevice,
+    queue_families: vulkan::queue_families::QueueFamilyIndices,
     physical_device: vulkan::physical_device::PhysicalDevice,
 
     surface: vulkan::surface::Surface,
@@ -75,14 +76,22 @@ impl VkEngine {
         let surface = vulkan::surface::Surface::new(&entry, &instance, &window)?;
 
         // pick Physical Device
-        let physical_device = vulkan::physical_device::PhysicalDevice::new(&instance)?;
+        let physical_device = vulkan::physical_device::PhysicalDevice::new(&instance, &surface)?;
+
+        let queue_families = vulkan::queue_families::QueueFamilyIndices::find_queue_families(
+            &instance.handle,
+            &surface,
+            &physical_device.handle,
+        );
 
         // create Logical Device
-        let logical_device =
-            vulkan::logical_devices::LogicalDevice::new(&instance, &physical_device)?;
+        let logical_device = vulkan::logical_devices::LogicalDevice::new(
+            &instance,
+            &queue_families,
+            &physical_device,
+        )?;
 
-        let graphics_queue =
-            vulkan::queue::Queue::new(&logical_device, &logical_device.queue_families)?;
+        let queue = vulkan::queue::Queue::new(&logical_device, &queue_families)?;
 
         Ok(VkEngine {
             frame_number: 0,
@@ -93,8 +102,10 @@ impl VkEngine {
             video_subsystem: video_subsystem,
             window: window,
 
-            graphics_queue: graphics_queue,
+            queue: queue,
+
             logical_device: logical_device,
+            queue_families: queue_families,
             physical_device: physical_device,
 
             surface: surface,
